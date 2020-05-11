@@ -4,6 +4,7 @@ import time
 
 import requests
 
+
 class Downloader():
     def __init__(self):
         self.getHtmlHeaders = {
@@ -21,26 +22,41 @@ class Downloader():
 
     def getHtml(self, url):
         try:
-            response = requests.get(url=url, headers=self.getHtmlHeaders)
-            print(response.status_code)
-            if response.status_code == 200:
-                return response.text
+            time.sleep(10)
+            return requests.get(url=url, headers=self.getHtmlHeaders)
         except requests.RequestException:
-            print('请求Html错误:')
+            print('failed to get url: ' + url)
 
+    def getVlistLengthByUid(self, uid):
+        try:
+            apiUrl = self.getVlistUrlByUid(uid, ps=20, pn=1)
+            response = self.getHtml(apiUrl)
+            count = json.loads(response.content)['data']['page']['count']
+            print('getting vlist length for: ' + uid)
+            print('count: ' + str(count))
+            if count:
+                return count
+            else:
+                return 0
+        except Exception:
+            print('failed to get vlist length for: '+uid)
 
-    def getVlistUrlByUid(self, uid, ps):
-        return 'https://api.bilibili.com/x/space/arc/search?mid=' + str(uid) + '&ps=100&tid=0&pn=1'
+    def getVlistUrlByUid(self, uid, pn, ps):
+        return 'https://api.bilibili.com/x/space/arc/search?mid=' + uid + '&ps='+ str(ps) +'&tid=0&pn=' + str(pn)
 
     def getVlistByUser(self, uid):
         try:
-            apiUrl = self.getVlistUrlByUid(uid, 1)
-            response = requests.get(url=apiUrl, headers=self.getHtmlHeaders)
-            vlist = json.loads(response.content)['data']['list']['vlist']
+            print('get vlist for: '+uid)
+            videoCount = self.getVlistLengthByUid(uid)
             result = []
-            if(vlist):
-                for v in vlist:
-                    result.append(v['bvid'])
+            pageSize = 20
+            for i in range(0, videoCount//pageSize + 1):
+                apiUrl = self.getVlistUrlByUid(uid, ps=pageSize, pn=i+1)
+                response = self.getHtml(apiUrl)
+                vlist = json.loads(response.content)['data']['list']['vlist']
+                if vlist:
+                    for v in vlist:
+                        result.append(v['bvid'])
             return result
 
         except requests.RequestException:
@@ -52,14 +68,3 @@ class Downloader():
 
         except Exception:
             print('failed to download: ' + bvid)
-
-
-
-a = Downloader()
-
-apiUrl = 'https://api.bilibili.com/x/space/arc/search?mid=444348914&ps=10&tid=0&pn=9'
-vlistJson = a.getVlistByUser('444348914')
-
-for v in vlistJson:
-    a.downloadVideoByBvid(v)
-    time.sleep(20)
