@@ -64,7 +64,7 @@ class Downloader():
 
     def downloadVideoByBvid(self, bvid):
         try:
-            os.system('you-get -o d:/vedio/ https://www.bilibili.com/video/' + bvid)
+            os.system('you-get -o ./downloads https://www.bilibili.com/video/' + bvid)
 
         except Exception:
             print('failed to download: ' + bvid)

@@ -1,3 +1,6 @@
 venv/
 .idea/
 myTest.py
+downloads
+runner.py
+__pycache__
